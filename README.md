@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # nodejs-end-to-end
 A simple (And probably insecure) attempt at end-to-end encryption using Javscript and NodeJS
 
@@ -17,3 +18,6 @@ First create a file 'app-vars.js' in the root and enter your mysql password. Nex
 
 ## Commands list
 - `npm run cert` : Creates RSA and SSL certificates to be used in the application
+=======
+# node-chat-server
+>>>>>>> 1208958eb87115fa2a8847acdec8b6347403316e
