@@ -1,0 +1,12 @@
+# Library files
+node_modules
+
+# certificates
+src/certs/*
+!src/certs/empty
+
+# user list
+src/configs/users.json
+
+# config file
+src/configs/config.js
