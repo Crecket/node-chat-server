@@ -7,10 +7,10 @@ var config = {};
 config.port = 8888;
 
 // This is optional and is used to check whether the server is running on a local or online source
-config.onlineHostName = "example.com";
-config.sslOptions = {};
+config.onlineHostName = "example.server.host.name";
 
-config.sqlite_db_location = "./database.db";
+// the location of the sqlite databse, based on the root
+config.sqliteDbLocation = "./database.db";
 
 // check if online host name is found
 if (os.hostname().trim() === config.onlineHostName) {
