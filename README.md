@@ -1,5 +1,5 @@
-# nodejs-end-to-end
-A simple (And probably insecure) attempt at end-to-end encryption using Javscript and NodeJS
+# node-chat-server
+A simple (And probably insecure) attempt at end-to-end encryption using Javscript and NodeJS. Client can be found [here](https://github.com/Crecket/node-chat-client)
 
 ## Requirements
 - node.js
