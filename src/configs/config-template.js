@@ -10,6 +10,8 @@ config.port = 8888;
 config.onlineHostName = "example.com";
 config.sslOptions = {};
 
+config.sqlite_db_location = "./database.db";
+
 // check if online host name is found
 if (os.hostname().trim() === config.onlineHostName) {
     // online settings, we also need to supply the ca certificate chain

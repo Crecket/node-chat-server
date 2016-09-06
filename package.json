@@ -18,7 +18,7 @@
   "devDependencies": {
   },
   "scripts": {
-    "cert": "node generate.js localhost rsa src/server/certs/"
+    "cert": "node generate.js localhost rsa src/certs/"
   },
   "repository": {
     "type": "git",

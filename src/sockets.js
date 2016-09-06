@@ -34,7 +34,7 @@ io.on('connection', function (socket) {
             success: true,
             username: false
         };
-        
+
         try {
             // attempt to verify the token
             var decoded = jwt.verify(
@@ -170,18 +170,18 @@ io.on('connection', function (socket) {
         var salt = false;
 
         // get the stored users
-        var storedUsers = userManagement.users.getUserList();
-
-        // check if exists
-        var lookupuser = storedUsers[username.toLowerCase()];
-        if (lookupuser) {
-            // get the salt
-            salt = lookupuser.salt;
-        } else {
-            // TODO if no user is found salt varies each time so if salt !== salt in > 2 attempts than user doesn't exist
-            salt = randomToken();
-        }
-        socket.emit('login_salt_callback', salt);
+        userManagement.users.getUserList(function (storedUsers) {
+            // check if exists
+            var lookupuser = storedUsers[username.toLowerCase()];
+            if (lookupuser) {
+                // get the salt
+                salt = lookupuser.salt;
+            } else {
+                // TODO if no user is found salt varies each time so if salt !== salt in > 2 attempts than user doesn't exist
+                salt = randomToken();
+            }
+            socket.emit('login_salt_callback', salt);
+        });
     });
 
     // incoming message request
@@ -202,8 +202,9 @@ io.on('connection', function (socket) {
 
     // change upload file setting
     socket.on('upload_setting', function (bool) {
-        var userList = userManagement.session.getUserList();
-        userList[username]['allow_files'] = bool;
+        userManagement.session.getUserList(function (userList) {
+            userList[username]['allow_files'] = bool;
+        });
     });
 
     // TODO track failed attempts and other login essentials
@@ -216,89 +217,90 @@ io.on('connection', function (socket) {
             'jwtToken': false
         };
 
-        var storedUsers = userManagement.users.getUserList();
+        // fetch users list
+        userManagement.users.getUserList(function(storedUsers){
+            if (!verified) {
 
-        if (!verified) {
+                console.log('');
+                console.log('Login attempt ' + usernameInput);
 
-            console.log('');
-            console.log('Login attempt ' + usernameInput);
+                if (password_cipher) {
+                    var password_hash = rsaDecrypt(password_cipher);
+                } else {
+                    callbackResult.message = "Invalid login attempt";
+                    callbackResult.success = false;
+                    socket.emit('login_attempt_callback', callbackResult);
+                    return;
+                }
 
-            if (password_cipher) {
-                var password_hash = rsaDecrypt(password_cipher);
-            } else {
-                callbackResult.message = "Invalid login attempt";
-                callbackResult.success = false;
-                socket.emit('login_attempt_callback', callbackResult);
-                return;
-            }
+                var lookupuser = storedUsers[usernameInput.toLowerCase()];
 
-            var lookupuser = storedUsers[usernameInput.toLowerCase()];
+                // Only want 1 user/result
+                if (lookupuser) {
+                    // hash from the database
+                    var db_hash = lookupuser.password;
 
-            // Only want 1 user/result
-            if (lookupuser) {
-                // hash from the database
-                var db_hash = lookupuser.password;
+                    // compare password hash with db_hash
+                    bcrypt.compare(password_hash, db_hash, function (err, res) {
+                        if (!err && res) {
 
-                // compare password hash with db_hash
-                bcrypt.compare(password_hash, db_hash, function (err, res) {
-                    if (!err && res) {
+                            var storedSessionUsers = userManagement.session.getUserList();
 
-                        var storedSessionUsers = userManagement.session.getUserList();
+                            // check if the user is already active
+                            if (!storedSessionUsers[usernameInput.toLowerCase()]) {
+                                callbackResult.success = true;
+                                callbackResult.message = 'Succesfully logged in';
+                                callbackResult.username = lookupuser.username;
+                                verified = true;
 
-                        // check if the user is already active
-                        if (!storedSessionUsers[usernameInput.toLowerCase()]) {
-                            callbackResult.success = true;
-                            callbackResult.message = 'Succesfully logged in';
-                            callbackResult.username = lookupuser.username;
-                            verified = true;
+                                // Add user to userlist
+                                userManagement.session.addUser(lookupuser.username, socketid, ip);
+                                username = lookupuser.username;
 
-                            // Add user to userlist
-                            userManagement.session.addUser(lookupuser.username, socketid, ip);
-                            username = lookupuser.username;
-
-                            // Create jwt token
-                            try {
-                                var token = jwt.sign(
-                                    {
-                                        username: username,
-                                        ip: ip
-                                    },
-                                    RSAPrivateKey,
-                                    {
-                                        algorithm: 'RS256',
-                                        issuer: "Gregory Goijaerts",
-                                        expiresIn: "30m"
-                                    }
-                                );
-                                // add token to callback
-                                callbackResult.jwtToken = token;
-                            } catch (ex) {
-                                console.log(ex);
+                                // Create jwt token
+                                try {
+                                    var token = jwt.sign(
+                                        {
+                                            username: username,
+                                            ip: ip
+                                        },
+                                        RSAPrivateKey,
+                                        {
+                                            algorithm: 'RS256',
+                                            issuer: "Gregory Goijaerts",
+                                            expiresIn: "30m"
+                                        }
+                                    );
+                                    // add token to callback
+                                    callbackResult.jwtToken = token;
+                                } catch (ex) {
+                                    console.log(ex);
+                                }
+                            } else {
+                                // user already has a active session
+                                callbackResult.success = false;
+                                callbackResult.message = 'This user is already active in a different client.';
                             }
+
                         } else {
-                            // user already has a active session
-                            callbackResult.success = false;
-                            callbackResult.message = 'This user is already active in a different client.';
+                            callbackResult.message = "Invalid login attempt";
+                            console.log('Return result', callbackResult);
                         }
 
-                    } else {
-                        callbackResult.message = "Invalid login attempt";
-                        console.log('Return result', callbackResult);
-                    }
+                        socket.emit('login_attempt_callback', callbackResult);
+                    });
 
+                } else {
+                    callbackResult.message = "Invalid login attempt";
+                    console.log('Return result', callbackResult);
                     socket.emit('login_attempt_callback', callbackResult);
-                });
-
+                }
             } else {
-                callbackResult.message = "Invalid login attempt";
-                console.log('Return result', callbackResult);
+                callbackResult.message = "You're already logged in";
+                callbackResult.success = true;
                 socket.emit('login_attempt_callback', callbackResult);
             }
-        } else {
-            callbackResult.message = "You're already logged in";
-            callbackResult.success = true;
-            socket.emit('login_attempt_callback', callbackResult);
-        }
+        });
     });
 
     // refresh user timestamps

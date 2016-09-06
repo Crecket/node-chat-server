@@ -32,11 +32,16 @@ var jwt = require('jsonwebtoken');
 // Load app-vars
 var config = require('./src/configs/config');
 
-// Load user management
-var userManagement = require('./src/user_management');
+// Sqlite3 setup
+// eval(fs.readFileSync('./src/sqlite_handler.js') + '');
+var db = require('./src/sqlite_handler.js')(config);
 
-// load initial users
-userManagement.users.loadUsers();
+// Load user management
+var userManagement = require('./src/user_handler')(db);
+
+// Create accounts
+// userManagement.users.newUser('crecket', '1234');
+// userManagement.users.createTestAccounts(100);
 
 // start servertime
 var serverTime = Math.floor(Date.now() / 1000);
