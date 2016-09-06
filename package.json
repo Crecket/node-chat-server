@@ -13,10 +13,10 @@
     "node-forge": "^0.6.39",
     "node-rsa": "^0.3.2",
     "socket.io": "^1.4.5",
-    "socketio-jwt": "^4.3.4"
+    "socketio-jwt": "^4.3.4",
+    "sqlite3": "^3.1.4"
   },
-  "devDependencies": {
-  },
+  "devDependencies": {},
   "scripts": {
     "cert": "node generate.js localhost rsa src/certs/"
   },
